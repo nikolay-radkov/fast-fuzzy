@@ -1,5 +1,6 @@
 const nonWordRegex = /[`~!@#$%^&*()\-=_+{}[\]\|\\;':",./<>?]+/g;
 const whitespaceRegex = /\s+/g;
+const unorm = require('unorm');
 
 //the default options, which will be used for any unset option
 const defaultOptions = {
@@ -14,9 +15,9 @@ const defaultOptions = {
 
 //normalize a string according to the options passed in
 function normalize(string, options) {
-	string = string.normalize();
+	string = unorm.nfc(string);
 	if (options.ignoreCase) {
-		string = string.toLocaleLowerCase();
+		string = string.toLowerCase();
 	}
 	if (options.ignoreSymbols) {
 		string = string.replace(nonWordRegex, "");
@@ -94,7 +95,7 @@ function damerauLevenshteinSellers(term, candidate) {
 function searchCore(term, candidates, options) {
 	const scoreMethod = options.useDamerau ? damerauLevenshteinSellers : levenshteinSellers;
 	let results = candidates.map((candidate) => {
-		return {item: candidate.item, key: candidate.key, score: scoreMethod(term, candidate.key)};
+		return { item: candidate.item, key: candidate.key, score: scoreMethod(term, candidate.key) };
 	}).filter((candidate) => candidate.score >= options.threshold).sort((a, b) => {
 		if (a.score === b.score) {
 			return Math.abs(a.key.length - term.length) - Math.abs(b.key.length - term.length);
@@ -112,7 +113,7 @@ function searchCore(term, candidates, options) {
 //transforms a list of candidates into objects with normalized search keys
 //the keySelector is used to pick a string from an object to search by
 function createSearchItems(items, options) {
-	return items.map((item) => ({item, key: normalize(options.keySelector(item), options)}));
+	return items.map((item) => ({ item, key: normalize(options.keySelector(item), options) }));
 }
 
 //wrapper for exporting sellers while allowing options to be passed in
